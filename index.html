@@ -1,0 +1,1684 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informatika Kesehatan & Analisis Data Klinis</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        clinical: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#14b8a6',
+                            600: '#0d9488',
+                            700: '#0f766e',
+                            800: '#115e59',
+                            900: '#134e4a',
+                            navy: '#0f172a',
+                            card: '#ffffff'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            min-height: 260px;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col md:flex-row">
+
+    <!-- SIDEBAR NAVIGASI -->
+    <aside class="w-full md:w-64 bg-slate-900 text-white flex-shrink-0 flex flex-col justify-between shadow-xl z-20">
+        <div>
+            <!-- Header Brand Medis -->
+            <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-400 flex items-center justify-center text-slate-900 font-black shadow-lg shadow-teal-500/20">
+                    <i class="fa-solid fa-heart-pulse text-lg text-white"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-sm tracking-wide text-white">MED-INFORMATICS</h1>
+                    <p class="text-[11px] text-teal-400 font-medium">Sistem Analisis Klinis</p>
+                </div>
+            </div>
+
+            <!-- Menu Item Navigasi -->
+            <nav class="p-3 space-y-1 text-sm font-medium">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-teal-300 bg-slate-800/80 transition">
+                    <i class="fa-solid fa-chart-pie w-5 text-center text-teal-400"></i>
+                    <span>Dashboard Utama</span>
+                </button>
+                <button onclick="switchTab('patients')" id="nav-patients" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-hospital-user w-5 text-center text-slate-400"></i>
+                    <span>Database Pasien</span>
+                </button>
+                <button onclick="switchTab('analytics')" id="nav-analytics" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-microscope w-5 text-center text-slate-400"></i>
+                    <span>Statistik & Anomali</span>
+                </button>
+                <button onclick="switchTab('reports')" id="nav-reports" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-file-medical w-5 text-center text-slate-400"></i>
+                    <span>Laporan & Ekspor</span>
+                </button>
+            </nav>
+        </div>
+
+        <!-- Info Sistem & Modul Algoritma -->
+        <div class="p-4 border-t border-slate-800 text-xs text-slate-400 bg-slate-950/40">
+            <div class="flex items-center justify-between mb-2">
+                <span class="flex items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Engine EWS Aktif</span>
+                </span>
+                <span class="text-[10px] bg-teal-950 text-teal-300 border border-teal-800 px-1.5 py-0.5 rounded">v2.4</span>
+            </div>
+            <p class="text-[11px] text-slate-400 leading-tight">Standar Algoritma: Modifikasi NEWS2 & Kategori Risiko GDS/SpO2.</p>
+        </div>
+    </aside>
+
+    <!-- KONTEN UTAMA -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+
+        <!-- Top Header Bar -->
+        <header class="bg-white border-b border-slate-200 px-6 py-3.5 sticky top-0 z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 shadow-xs">
+            <div class="flex items-center gap-3">
+                <div>
+                    <h2 id="page-title" class="text-lg font-bold text-slate-800 tracking-tight">Dashboard Informatika Kesehatan</h2>
+                    <p class="text-xs text-slate-500" id="current-datetime">Memuat tanggal & waktu...</p>
+                </div>
+            </div>
+
+            <!-- Tools: Status, Notifikasi & Tambah Pasien -->
+            <div class="flex items-center gap-3">
+                <!-- Dropdown Indikator Kritis -->
+                <div class="relative">
+                    <button onclick="toggleAlertMenu()" class="flex items-center gap-2 px-3 py-1.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold rounded-lg hover:bg-rose-100 transition">
+                        <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                        <span>Alert Kritis:</span>
+                        <span id="critical-alert-count" class="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center text-[10px] font-bold">0</span>
+                    </button>
+                    <!-- Floating Alert Box -->
+                    <div id="alert-dropdown" class="hidden absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-slate-200 p-3 z-30">
+                        <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center justify-between">
+                            <span>Pasien Perhatian Segera</span>
+                            <span class="text-[10px] font-normal text-rose-600">EWS &ge; 7 / Anomali</span>
+                        </h4>
+                        <div id="critical-alert-list" class="space-y-1.5 max-h-56 overflow-y-auto text-xs">
+                            <!-- Diisi via JavaScript -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Buka Modal Tambah Pasien -->
+                <button onclick="openPatientModal()" class="flex items-center gap-2 px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition shadow-md shadow-teal-600/20">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Pasien Baru</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- MAIN VIEW WRAPPER -->
+        <main class="p-6 space-y-6">
+
+            <!-- ================= VIEW 1: DASHBOARD UTAMA ================= -->
+            <section id="view-dashboard" class="space-y-6">
+                <!-- KPI CARDS SUMMARY -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Total Pasien -->
+                    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total Pasien Terpantau</p>
+                            <h3 id="stat-total-patients" class="text-2xl font-extrabold text-slate-900 mt-1">0</h3>
+                            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-teal-600 mt-1">
+                                <i class="fa-solid fa-database"></i> Database Real-time
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-teal-50 border border-teal-100 flex items-center justify-center text-teal-600 text-lg">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                    </div>
+
+                    <!-- Pasien Risiko Kritis -->
+                    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Triase Kritis (EWS &ge; 7)</p>
+                            <h3 id="stat-critical-patients" class="text-2xl font-extrabold text-rose-600 mt-1">0</h3>
+                            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-rose-500 mt-1">
+                                <i class="fa-solid fa-bell"></i> Butuh Resusitasi / ICU
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 text-lg">
+                            <i class="fa-solid fa-heart-crack"></i>
+                        </div>
+                    </div>
+
+                    <!-- Rata-rata Saturasi Oksigen (SpO2) -->
+                    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Rata-rata SpO2 Klinis</p>
+                            <h3 id="stat-avg-spo2" class="text-2xl font-extrabold text-slate-900 mt-1">0%</h3>
+                            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-sky-600 mt-1">
+                                <i class="fa-solid fa-lungs"></i> Nilai Normal: &ge; 95%
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600 text-lg">
+                            <i class="fa-solid fa-wind"></i>
+                        </div>
+                    </div>
+
+                    <!-- Rata-rata Tekanan Sistolik -->
+                    <div class="bg-white rounded-xl p-4 border border-slate-200/80 shadow-sm flex items-center justify-between">
+                        <div>
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Rerata Tekanan Sistolik</p>
+                            <h3 id="stat-avg-bp" class="text-2xl font-extrabold text-slate-900 mt-1">0 mmHg</h3>
+                            <span class="inline-flex items-center gap-1 text-[11px] font-medium text-amber-600 mt-1">
+                                <i class="fa-solid fa-gauge-high"></i> Evaluasi Kardiovaskular
+                            </span>
+                        </div>
+                        <div class="w-12 h-12 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600 text-lg">
+                            <i class="fa-solid fa-wave-square"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- CHARTS GRID SECTION -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Chart 1: Distribusi Risiko Triase (Donut) -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Stratifikasi Risiko Pasien (Early Warning Score)</h3>
+                                <p class="text-xs text-slate-400">Pengelompokan otomatis berdasarkan NEWS2 Clinical Scoring</p>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Real-time</span>
+                        </div>
+                        <div class="chart-container flex items-center justify-center">
+                            <canvas id="chartRiskDistribution"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 2: Scatter Plot Sistolik vs Gula Darah -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Korelasi Tekanan Sistolik vs Gula Darah (GDS)</h3>
+                                <p class="text-xs text-slate-400">Identifikasi komorbiditas kardiometabolik & titik outlier</p>
+                            </div>
+                            <span class="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded font-mono">Bivariat</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartBivariate"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 3: Distribusi Kategori Diagnosis ICD-10 -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Sebaran Penyakit / Kategori ICD-10 Terbanyak</h3>
+                                <p class="text-xs text-slate-400">Frekuensi morbiditas populasi pasien fasilitas</p>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Epidemiologi</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartICD"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Chart 4: Estimasi Tren Beban Fasilitas 7 Hari Terakhir -->
+                    <div class="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-800">Tren Penerimaan & Tingkat Keparahan (7 Hari Terakhir)</h3>
+                                <p class="text-xs text-slate-400">Rasio pasien stabil vs pasien memerlukan pemantauan intensif</p>
+                            </div>
+                            <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">Longitudinal</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="chartTrend"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TABEL QUICK VIEW PASIEN RISIKO TINGGI & KRITIS -->
+                <div class="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+                    <div class="p-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-solid fa-circle-exclamation text-amber-500"></i>
+                            <h3 class="text-sm font-bold text-slate-800">Prioritas Klinis Segera (EWS Tinggi & Kritis)</h3>
+                        </div>
+                        <button onclick="switchTab('patients')" class="text-xs text-teal-600 hover:text-teal-700 font-medium flex items-center gap-1">
+                            Buka Seluruh Database Pasien <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-white text-slate-500 font-semibold border-b border-slate-200">
+                                    <th class="p-3">No. Rekam Medis</th>
+                                    <th class="p-3">Nama Pasien</th>
+                                    <th class="p-3">Usia/JK</th>
+                                    <th class="p-3">Tanda Vital (BP | HR | SpO2 | GDS)</th>
+                                    <th class="p-3 text-center">Skor EWS</th>
+                                    <th class="p-3">Diagnosis Primer</th>
+                                    <th class="p-3 text-center">Aksi Cepat</th>
+                                </tr>
+                            </thead>
+                            <tbody id="quick-high-risk-tbody" class="divide-y divide-slate-100">
+                                <!-- Diisi JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 2: DATABASE PASIEN LENGKAP ================= -->
+            <section id="view-patients" class="hidden space-y-5">
+                <!-- Control Toolbar: Search, Filter, Generator Data -->
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2 flex-1">
+                        <!-- Pencarian -->
+                        <div class="relative w-full sm:w-64">
+                            <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+                            <input type="text" id="patient-search-input" onkeyup="applyFilterAndSearch()" placeholder="Cari nama, No. RM, diagnosis..." 
+                                class="w-full pl-8 pr-3 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+
+                        <!-- Filter Kategori Risiko -->
+                        <select id="filter-risk" onchange="applyFilterAndSearch()" class="border border-slate-300 rounded-lg text-xs px-3 py-1.5 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="ALL">Semua Kategori Risiko</option>
+                            <option value="Kritis">Kritis (EWS &ge; 7)</option>
+                            <option value="Tinggi">Tinggi (EWS 5-6)</option>
+                            <option value="Sedang">Sedang (EWS 3-4)</option>
+                            <option value="Rendah">Rendah (EWS 0-2)</option>
+                        </select>
+
+                        <!-- Filter Gender -->
+                        <select id="filter-gender" onchange="applyFilterAndSearch()" class="border border-slate-300 rounded-lg text-xs px-3 py-1.5 focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="ALL">Semua Jenis Kelamin</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+
+                    <!-- Batch Actions -->
+                    <div class="flex items-center gap-2">
+                        <button onclick="generateRandomCohort(5)" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-300 flex items-center gap-1.5" title="Generate 5 Pasien Uji Klinis Acak">
+                            <i class="fa-solid fa-dice text-teal-600"></i> +5 Sampel Pasien
+                        </button>
+                        <button onclick="resetToInitialData()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition border border-slate-300 flex items-center gap-1.5" title="Kembalikan dataset awal">
+                            <i class="fa-solid fa-arrow-rotate-left text-amber-600"></i> Reset Data
+                        </button>
+                        <button onclick="openPatientModal()" class="px-3 py-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-semibold rounded-lg transition shadow-sm flex items-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Tambah Data
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Full Patient Table -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
+                                <tr>
+                                    <th class="p-3.5">ID / No. RM</th>
+                                    <th class="p-3.5">Nama Lengkap</th>
+                                    <th class="p-3.5 text-center">Usia / JK</th>
+                                    <th class="p-3.5">Tensi (TD)</th>
+                                    <th class="p-3.5 text-center">Nadi (HR)</th>
+                                    <th class="p-3.5 text-center">SpO2</th>
+                                    <th class="p-3.5 text-center">GDS</th>
+                                    <th class="p-3.5 text-center">Skor EWS</th>
+                                    <th class="p-3.5">Status Triase</th>
+                                    <th class="p-3">Kategori ICD-10</th>
+                                    <th class="p-3.5 text-center">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="full-patient-tbody" class="divide-y divide-slate-100">
+                                <!-- Diisi via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="p-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500">
+                        <span id="patient-count-info">Menampilkan 0 pasien</span>
+                        <span class="text-[11px]">Algoritma deteksi vitals otomatis dihitung per perubahan nilai</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 3: STATISTIK & DETEKSI ANOMALI ================= -->
+            <section id="view-analytics" class="hidden space-y-6">
+                <!-- Header Analisis -->
+                <div class="bg-gradient-to-r from-slate-900 via-slate-800 to-teal-950 p-6 rounded-2xl text-white shadow-md">
+                    <div class="max-w-3xl">
+                        <span class="px-2.5 py-1 bg-teal-500/20 text-teal-300 border border-teal-400/30 rounded text-[11px] font-semibold uppercase tracking-wider">
+                            Modul Analisis Informatika Medis
+                        </span>
+                        <h2 class="text-xl font-bold mt-2">Mesin Pengolahan Statistik Klinis & Rule-based Alert</h2>
+                        <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                            Secara otomatis menghitung parameter biostatistik deskriptif (Mean, Median, Standar Deviasi) dari tanda vital kohort pasien aktif, serta mendeteksi outlier berisiko tinggi seperti Krisis Hipertensi, Hipoksemia Akut, dan Disregulasi Glikemik.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- TABEL DESKRIPTIF STATISTIK VITAL -->
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                    <h3 class="text-sm font-bold text-slate-800 mb-1 flex items-center gap-2">
+                        <i class="fa-solid fa-calculator text-teal-600"></i>
+                        Parameter Biostatistik Deskriptif Tanda Vital
+                    </h3>
+                    <p class="text-xs text-slate-500 mb-4">Hasil agregasi dinamis seluruh pasien dalam sistem</p>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs border border-slate-200 rounded-lg overflow-hidden">
+                            <thead class="bg-slate-100 text-slate-700 font-bold uppercase text-[10px] tracking-wider">
+                                <tr>
+                                    <th class="p-3">Variabel Fisiologis</th>
+                                    <th class="p-3">Satuan</th>
+                                    <th class="p-3 text-center">Minimum</th>
+                                    <th class="p-3 text-center">Maksimum</th>
+                                    <th class="p-3 text-center">Mean (&mu;)</th>
+                                    <th class="p-3 text-center">Median</th>
+                                    <th class="p-3 text-center">Standar Deviasi (&sigma;)</th>
+                                    <th class="p-3">Rentang Fisiologis Normal</th>
+                                </tr>
+                            </thead>
+                            <tbody id="vital-stats-tbody" class="divide-y divide-slate-200">
+                                <!-- Diisi via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- DETEKSI ANOMALI & KRISIS KLINIS RULE-BASED -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Anomali 1: Krisis Hipertensi -->
+                    <div class="bg-white rounded-xl border border-rose-200 shadow-sm p-4 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-2 h-full bg-rose-500"></div>
+                        <div class="flex items-center gap-2 text-rose-700 font-bold text-xs uppercase mb-1">
+                            <i class="fa-solid fa-heart-pulse"></i> Deteksi Krisis Hipertensi
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-3">Aturan: Sistolik &ge; 180 atau Diastolik &ge; 120 mmHg</p>
+                        <div id="anomaly-htn-list" class="space-y-1.5 text-xs max-h-48 overflow-y-auto">
+                            <!-- Diisi via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Anomali 2: Hipoksemia Kritis -->
+                    <div class="bg-white rounded-xl border border-amber-200 shadow-sm p-4 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-2 h-full bg-amber-500"></div>
+                        <div class="flex items-center gap-2 text-amber-700 font-bold text-xs uppercase mb-1">
+                            <i class="fa-solid fa-lungs"></i> Deteksi Hipoksemia Parah
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-3">Aturan: Saturasi Oksigen (SpO2) &lt; 92%</p>
+                        <div id="anomaly-spo2-list" class="space-y-1.5 text-xs max-h-48 overflow-y-auto">
+                            <!-- Diisi via JS -->
+                        </div>
+                    </div>
+
+                    <!-- Anomali 3: Krisis Glikemik -->
+                    <div class="bg-white rounded-xl border border-indigo-200 shadow-sm p-4 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-2 h-full bg-indigo-500"></div>
+                        <div class="flex items-center gap-2 text-indigo-700 font-bold text-xs uppercase mb-1">
+                            <i class="fa-solid fa-droplet"></i> Anomali Glukosa Ekstrem
+                        </div>
+                        <p class="text-[11px] text-slate-500 mb-3">Aturan: GDS &gt; 250 mg/dL atau Hipoglikemia &lt; 70 mg/dL</p>
+                        <div id="anomaly-glucose-list" class="space-y-1.5 text-xs max-h-48 overflow-y-auto">
+                            <!-- Diisi via JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ================= VIEW 4: LAPORAN & EKSPOR DATA ================= -->
+            <section id="view-reports" class="hidden space-y-6">
+                <div class="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Pusat Pelaporan & Ekspor Data Medis</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Ekspor dataset terformat untuk analisis statistik lanjutan, audit klinis, atau sistem rekam medis elektronik.</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="exportToCSV()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition shadow-sm flex items-center gap-2">
+                                <i class="fa-solid fa-file-csv text-sm"></i> Unduh File CSV
+                            </button>
+                            <button onclick="copyDataToClipboard()" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold rounded-lg transition shadow-sm flex items-center gap-2">
+                                <i class="fa-regular fa-copy text-sm"></i> Salin JSON Ringkas
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Ringkasan Eksekutif Cetak -->
+                    <div class="mt-6 border border-slate-200 rounded-xl p-5 bg-slate-50 space-y-4">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-3">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-hospital text-teal-600 text-lg"></i>
+                                <div>
+                                    <h4 class="text-sm font-bold text-slate-800">Ringkasan Audit Fisiologis & Epidemiologi Pasien</h4>
+                                    <p class="text-[11px] text-slate-400">Instalasi Pemantauan Informatika Kesehatan Rumah Sakit</p>
+                                </div>
+                            </div>
+                            <span class="text-xs font-mono text-slate-500" id="report-timestamp">Dicetak: -</span>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                            <div class="bg-white p-3 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block mb-1">Populasi Pasien Aktif</span>
+                                <span id="rep-total-pts" class="text-lg font-bold text-slate-900">0 Pasien</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block mb-1">Pasien Prioritas Kritis (Red)</span>
+                                <span id="rep-critical-pts" class="text-lg font-bold text-rose-600">0 Pasien</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block mb-1">Indeks Kasus Disglikemik</span>
+                                <span id="rep-glucose-cases" class="text-lg font-bold text-amber-600">0 Kasus</span>
+                            </div>
+                            <div class="bg-white p-3 rounded-lg border border-slate-200">
+                                <span class="text-slate-400 block mb-1">Indeks Kasus Hipoksemia</span>
+                                <span id="rep-hypoxia-cases" class="text-lg font-bold text-sky-600">0 Kasus</span>
+                            </div>
+                        </div>
+
+                        <!-- Pratinjau Struktur Data CSV -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-2">Pratinjau Format Berkas Ekspor (CSV Header & 5 Baris Pertama):</label>
+                            <pre id="csv-preview-box" class="bg-slate-900 text-teal-300 p-3 rounded-lg text-[11px] font-mono overflow-x-auto max-h-48 leading-relaxed"></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ================= MODAL TAMBAH / EDIT PASIEN ================= -->
+    <div id="patient-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto border border-slate-200">
+            <!-- Modal Header -->
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+                        <i class="fa-solid fa-notes-medical"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-form-title" class="text-sm font-bold text-slate-800">Input Data Klinis Pasien Baru</h3>
+                        <p class="text-[11px] text-slate-400">Parameter vital akan langsung diproses oleh sistem EWS</p>
+                    </div>
+                </div>
+                <button onclick="closePatientModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="patient-form" onsubmit="handleFormSubmit(event)" class="p-6 space-y-4">
+                <input type="hidden" id="form-patient-id">
+
+                <!-- Identitas Dasar Pasien -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">No. Rekam Medis (RM) *</label>
+                        <input type="text" id="form-rm" required placeholder="RM-2026-001" 
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap Pasien *</label>
+                        <input type="text" id="form-nama" required placeholder="Nama lengkap..." 
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Usia (Tahun) *</label>
+                        <input type="number" id="form-usia" required min="1" max="120" placeholder="Th" 
+                            class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Jenis Kelamin *</label>
+                        <select id="form-gender" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori ICD-10 *</label>
+                        <select id="form-icd" required class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none bg-white">
+                            <option value="Kardiovaskular (I00-I99)">Kardiovaskular (I00-I99)</option>
+                            <option value="Respiratori (J00-J99)">Respiratori (J00-J99)</option>
+                            <option value="Endokrin & Metabolik (E00-E90)">Endokrin/Metabolik (E00-E90)</option>
+                            <option value="Penyakit Menular / Infeksi (A00-B99)">Infeksi / ISPA (A00-B99)</option>
+                            <option value="Gastrointestinal (K00-K93)">Gastrointestinal (K00-K93)</option>
+                            <option value="Neurologis / Saraf (G00-G99)">Neurologis (G00-G99)</option>
+                            <option value="Pemeriksaan Rutin / Umum (Z00-Z99)">Umum / Checkup (Z00-Z99)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Tanda-Tanda Vital Klinis -->
+                <div class="p-4 bg-teal-50/50 rounded-xl border border-teal-100 space-y-3">
+                    <h4 class="text-xs font-bold text-teal-900 flex items-center gap-1.5 uppercase tracking-wider">
+                        <i class="fa-solid fa-heart-pulse text-teal-600"></i> Pengukuran Tanda Vital Klinis
+                    </h4>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Sistolik (mmHg)</label>
+                            <input type="number" id="form-systolic" required min="50" max="280" placeholder="120"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Diastolik (mmHg)</label>
+                            <input type="number" id="form-diastolic" required min="30" max="180" placeholder="80"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nadi / HR (bpm)</label>
+                            <input type="number" id="form-hr" required min="30" max="220" placeholder="78"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-slate-700 mb-1">SpO2 (%)</label>
+                            <input type="number" id="form-spo2" required min="50" max="100" placeholder="98"
+                                class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Gula Darah Sewaktu / GDS (mg/dL)</label>
+                        <input type="number" id="form-glucose" required min="20" max="700" placeholder="110"
+                            class="w-full px-2.5 py-1.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                    </div>
+                </div>
+
+                <!-- Diagnosis Spesifik -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Diagnosis Spesifik / Keluhan Klinis Utama</label>
+                    <input type="text" id="form-diagnosis" required placeholder="Contoh: Krisis Hipertensi gr. II, Pneumonia Akut..." 
+                        class="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-teal-500 focus:outline-none">
+                </div>
+
+                <!-- Footer Buttons -->
+                <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2">
+                    <button type="button" onclick="closePatientModal()" class="px-4 py-2 border border-slate-300 rounded-lg text-xs font-medium text-slate-700 hover:bg-slate-100 transition">
+                        Batal
+                    </button>
+                    <button type="submit" class="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold transition shadow-sm">
+                        Simpan Rekam Klinis
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL DETAIL PASIEN (CLINICAL DOSSIER) ================= -->
+    <div id="detail-modal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[92vh] overflow-y-auto border border-slate-200">
+            <div class="p-5 border-b border-slate-100 flex items-center justify-between bg-slate-900 text-white rounded-t-2xl">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-teal-500 flex items-center justify-center text-slate-900 font-bold">
+                        <i class="fa-solid fa-id-card-clip text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 id="dt-name" class="text-base font-bold text-white">Nama Pasien</h3>
+                        <p id="dt-rm" class="text-xs text-teal-300 font-mono">RM: -</p>
+                    </div>
+                </div>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-white p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-5">
+                <!-- Status Triase Banner -->
+                <div id="dt-risk-banner" class="p-4 rounded-xl flex items-center justify-between">
+                    <div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider block">Status Triase Otomatis</span>
+                        <h4 id="dt-risk-text" class="text-lg font-black mt-0.5">TINGKAT RISIKO</h4>
+                        <p id="dt-ews-score" class="text-xs mt-0.5">Skor EWS: 0</p>
+                    </div>
+                    <div id="dt-risk-icon" class="text-3xl">
+                        <i class="fa-solid fa-shield-heart"></i>
+                    </div>
+                </div>
+
+                <!-- Info Demografi & ICD -->
+                <div class="grid grid-cols-3 gap-3 text-xs">
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-400 block mb-0.5">Usia / Jenis Kelamin</span>
+                        <span id="dt-age-gender" class="font-bold text-slate-800">-</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-400 block mb-0.5">Klasifikasi ICD-10</span>
+                        <span id="dt-icd" class="font-bold text-slate-800 truncate block">-</span>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                        <span class="text-slate-400 block mb-0.5">Diagnosis Kerja</span>
+                        <span id="dt-diagnosis" class="font-bold text-slate-800 truncate block">-</span>
+                    </div>
+                </div>
+
+                <!-- Tanda Vital Grid -->
+                <div>
+                    <h5 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Panel Fisiologis Tanda Vital:</h5>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div class="border border-slate-200 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 block uppercase">Tekanan Darah</span>
+                            <span id="dt-bp" class="text-sm font-black text-slate-800">120/80</span>
+                            <span class="text-[10px] text-slate-500 block">mmHg</span>
+                        </div>
+                        <div class="border border-slate-200 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 block uppercase">Laju Nadi</span>
+                            <span id="dt-hr" class="text-sm font-black text-slate-800">76</span>
+                            <span class="text-[10px] text-slate-500 block">bpm</span>
+                        </div>
+                        <div class="border border-slate-200 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 block uppercase">Saturasi O2</span>
+                            <span id="dt-spo2" class="text-sm font-black text-slate-800">98%</span>
+                            <span class="text-[10px] text-slate-500 block">SpO2</span>
+                        </div>
+                        <div class="border border-slate-200 p-3 rounded-xl text-center">
+                            <span class="text-[10px] text-slate-400 block uppercase">Gula Darah</span>
+                            <span id="dt-glucose" class="text-sm font-black text-slate-800">110</span>
+                            <span class="text-[10px] text-slate-500 block">mg/dL</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rekomendasi Klinis Informatika -->
+                <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                    <h5 class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                        <i class="fa-solid fa-robot text-teal-600"></i> Rekomendasi Intervensi Klinis Algoritmis:
+                    </h5>
+                    <div id="dt-recommendations" class="text-xs text-slate-600 space-y-1">
+                        <!-- Diisi via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 flex justify-end bg-slate-50 rounded-b-2xl">
+                <button onclick="closeDetailModal()" class="px-4 py-1.5 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-900 transition">
+                    Tutup Dossier
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFIKASI KUSTOM (Menggantikan Alert) -->
+    <div id="toast" class="hidden fixed bottom-5 right-5 z-50 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 flex items-center gap-3 transition-all duration-300 transform translate-y-2">
+        <div id="toast-icon" class="text-teal-400 text-base">
+            <i class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+            <h4 id="toast-title" class="text-xs font-bold">Informasi</h4>
+            <p id="toast-message" class="text-[11px] text-slate-300">Pesan notifikasi.</p>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC & HEALTH INFORMATICS ENGINE -->
+    <script>
+        /**
+         * INITIAL DATASET: DATA KLINIS PASIEN REALISTIS
+         */
+        const INITIAL_PATIENTS = [
+            { id: "P-101", rm: "RM-2026-001", nama: "Bpk. Joko Santoso", usia: 62, gender: "L", systolic: 185, diastolic: 110, hr: 104, spo2: 91, glucose: 245, icd: "Kardiovaskular (I00-I99)", diagnosis: "Krisis Hipertensi Emergensi & Ensefalopati" },
+            { id: "P-102", rm: "RM-2026-002", nama: "Ibu Siti Aminah", usia: 55, gender: "P", systolic: 135, diastolic: 85, hr: 88, spo2: 97, glucose: 310, icd: "Endokrin & Metabolik (E00-E90)", diagnosis: "Diabetes Melitus Tipe 2 Tak Terkontrol" },
+            { id: "P-103", rm: "RM-2026-003", nama: "Sdr. Kevin Wijaya", usia: 27, gender: "L", systolic: 115, diastolic: 75, hr: 118, spo2: 89, glucose: 102, icd: "Respiratori (J00-J99)", diagnosis: "Asma Eksaserbasi Akut Derajat Berat" },
+            { id: "P-104", rm: "RM-2026-004", nama: "Ibu Ratna Dewi", usia: 41, gender: "P", systolic: 118, diastolic: 78, hr: 72, spo2: 99, glucose: 95, icd: "Pemeriksaan Rutin / Umum (Z00-Z99)", diagnosis: "Medical Check Up Tahunan - Stabil" },
+            { id: "P-105", rm: "RM-2026-005", nama: "Bpk. Hendra Gunawan", usia: 67, gender: "L", systolic: 92, diastolic: 58, hr: 124, spo2: 88, glucose: 140, icd: "Kardiovaskular (I00-I99)", diagnosis: "Gagal Jantung Kongestif Akut NYHA IV" },
+            { id: "P-106", rm: "RM-2026-006", nama: "Nn. Maya Putri", usia: 22, gender: "P", systolic: 110, diastolic: 70, hr: 78, spo2: 98, glucose: 88, icd: "Penyakit Menular / Infeksi (A00-B99)", diagnosis: "Faringitis Akut & Rinofaringitis" },
+            { id: "P-107", rm: "RM-2026-007", nama: "Bpk. Ahmad Fauzi", usia: 59, gender: "L", systolic: 145, diastolic: 92, hr: 96, spo2: 92, glucose: 175, icd: "Respiratori (J00-J99)", diagnosis: "Penyakit Paru Obstruktif Kronik (PPOK)" },
+            { id: "P-108", rm: "RM-2026-008", nama: "Ibu Sri Wahyuni", usia: 51, gender: "P", systolic: 170, diastolic: 105, hr: 84, spo2: 96, glucose: 160, icd: "Neurologis / Saraf (G00-G99)", diagnosis: "Transient Ischemic Attack (TIA)" },
+            { id: "P-109", rm: "RM-2026-009", nama: "Bpk. Bambang Pamungkas", usia: 48, gender: "L", systolic: 165, diastolic: 98, hr: 108, spo2: 94, glucose: 210, icd: "Kardiovaskular (I00-I99)", diagnosis: "Sindrom Koroner Akut (NSTEMI)" },
+            { id: "P-110", rm: "RM-2026-010", nama: "Sdr. Rian Pratama", usia: 34, gender: "L", systolic: 105, diastolic: 68, hr: 92, spo2: 98, glucose: 58, icd: "Endokrin & Metabolik (E00-E90)", diagnosis: "Hipoglikemia Simtomatik Ringan" },
+            { id: "P-111", rm: "RM-2026-011", nama: "Ibu Nurul Hidayah", usia: 39, gender: "P", systolic: 122, diastolic: 80, hr: 74, spo2: 99, glucose: 105, icd: "Gastrointestinal (K00-K93)", diagnosis: "Dispepsia Fungsional & GERD" },
+            { id: "P-112", rm: "RM-2026-012", nama: "Bpk. Dedi Supriyadi", usia: 73, gender: "L", systolic: 178, diastolic: 95, hr: 62, spo2: 93, glucose: 190, icd: "Kardiovaskular (I00-I99)", diagnosis: "Hipertensi Kronis Stadium 2 & CKD St. III" }
+        ];
+
+        // Global State
+        let patients = JSON.parse(localStorage.getItem('med_informatics_pts')) || JSON.parse(JSON.stringify(INITIAL_PATIENTS));
+        let activeTab = 'dashboard';
+        let chartInstances = {};
+
+        /**
+         * ALGORITMA KLINIS: EARLY WARNING SCORE (EWS / NEWS2 MODIFIKASI)
+         * Mengembalikan skor integer (0-12+) & kategori risiko
+         */
+        function calculateEWS(p) {
+            let score = 0;
+
+            // 1. SpO2 (Saturasi Oksigen)
+            if (p.spo2 <= 91) score += 3;
+            else if (p.spo2 <= 93) score += 2;
+            else if (p.spo2 <= 95) score += 1;
+
+            // 2. Sistolik Tekanan Darah (mmHg)
+            if (p.systolic <= 90 || p.systolic >= 180) score += 3;
+            else if (p.systolic >= 160 || p.systolic <= 100) score += 2;
+            else if (p.systolic >= 140 || p.systolic <= 110) score += 1;
+
+            // 3. Heart Rate / Frekuensi Nadi (bpm)
+            if (p.hr <= 40 || p.hr >= 125) score += 3;
+            else if (p.hr >= 111 || p.hr <= 50) score += 2;
+            else if (p.hr >= 91) score += 1;
+
+            // 4. Glukosa Darah (Faktor Tambahan Metabolik)
+            if (p.glucose < 60 || p.glucose >= 280) score += 2;
+            else if (p.glucose >= 200 || p.glucose < 70) score += 1;
+
+            // Kategori Risiko
+            let category = "Rendah";
+            let color = "emerald";
+            let labelClass = "bg-emerald-100 text-emerald-800 border-emerald-300";
+
+            if (score >= 7) {
+                category = "Kritis";
+                color = "rose";
+                labelClass = "bg-rose-100 text-rose-800 border-rose-300";
+            } else if (score >= 5) {
+                category = "Tinggi";
+                color = "orange";
+                labelClass = "bg-orange-100 text-orange-800 border-orange-300";
+            } else if (score >= 3) {
+                category = "Sedang";
+                color = "amber";
+                labelClass = "bg-amber-100 text-amber-800 border-amber-300";
+            }
+
+            return {
+                score,
+                category,
+                color,
+                labelClass
+            };
+        }
+
+        /**
+         * MESIN STATISTIK DESKRIPTIF
+         */
+        function calculateDescriptiveStats(numbers) {
+            if (!numbers || numbers.length === 0) return { min: 0, max: 0, mean: 0, median: 0, stdDev: 0 };
+
+            const n = numbers.length;
+            const min = Math.min(...numbers);
+            const max = Math.max(...numbers);
+            const sum = numbers.reduce((a, b) => a + b, 0);
+            const mean = sum / n;
+
+            // Median
+            const sorted = [...numbers].sort((a, b) => a - b);
+            const mid = Math.floor(n / 2);
+            const median = n % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+
+            // Standar Deviasi
+            const variance = numbers.reduce((acc, val) => acc + Math.pow(val - mean, 2), 0) / (n > 1 ? n - 1 : 1);
+            const stdDev = Math.sqrt(variance);
+
+            return {
+                min: min.toFixed(1),
+                max: max.toFixed(1),
+                mean: mean.toFixed(1),
+                median: median.toFixed(1),
+                stdDev: stdDev.toFixed(2)
+            };
+        }
+
+        /**
+         * INISIALISASI APLIKASI
+         */
+        window.onload = function () {
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+            renderAllViews();
+        };
+
+        function saveState() {
+            localStorage.setItem('med_informatics_pts', JSON.stringify(patients));
+            renderAllViews();
+        }
+
+        function renderAllViews() {
+            updateDashboardKPIs();
+            renderCharts();
+            renderQuickHighRiskTable();
+            renderFullPatientTable();
+            renderAnalyticsSection();
+            renderReportsSection();
+            updateCriticalAlertDropdown();
+        }
+
+        function updateLiveClock() {
+            const now = new Date();
+            const options = { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' };
+            const str = now.toLocaleDateString('id-ID', options);
+            const dtEl = document.getElementById('current-datetime');
+            const repEl = document.getElementById('report-timestamp');
+            if (dtEl) dtEl.innerText = str + " WIB";
+            if (repEl) repEl.innerText = "Audit: " + str;
+        }
+
+        /**
+         * NAVIGASI TAB
+         */
+        function switchTab(tabId) {
+            activeTab = tabId;
+            const views = ['dashboard', 'patients', 'analytics', 'reports'];
+            const titles = {
+                'dashboard': 'Dashboard Informatika Kesehatan',
+                'patients': 'Database Terintegrasi Rekam Pasien',
+                'analytics': 'Pemrosesan Statistik & Deteksi Anomali Medis',
+                'reports': 'Pusat Analisis & Ekspor Data Klinis'
+            };
+
+            views.forEach(v => {
+                const el = document.getElementById('view-' + v);
+                const nav = document.getElementById('nav-' + v);
+                if (v === tabId) {
+                    el.classList.remove('hidden');
+                    nav.classList.add('bg-slate-800/80', 'text-teal-300');
+                    nav.classList.remove('text-slate-300');
+                } else {
+                    el.classList.add('hidden');
+                    nav.classList.remove('bg-slate-800/80', 'text-teal-300');
+                    nav.classList.add('text-slate-300');
+                }
+            });
+
+            document.getElementById('page-title').innerText = titles[tabId];
+
+            if (tabId === 'dashboard') {
+                setTimeout(renderCharts, 100);
+            }
+        }
+
+        /**
+         * UPDATE DASHBOARD KPIS
+         */
+        function updateDashboardKPIs() {
+            const total = patients.length;
+            let criticalCount = 0;
+            let totalSpo2 = 0;
+            let totalSys = 0;
+
+            patients.forEach(p => {
+                const ews = calculateEWS(p);
+                if (ews.category === 'Kritis') criticalCount++;
+                totalSpo2 += Number(p.spo2);
+                totalSys += Number(p.systolic);
+            });
+
+            document.getElementById('stat-total-patients').innerText = total;
+            document.getElementById('stat-critical-patients').innerText = criticalCount;
+            document.getElementById('stat-avg-spo2').innerText = total > 0 ? (totalSpo2 / total).toFixed(1) + '%' : '0%';
+            document.getElementById('stat-avg-bp').innerText = total > 0 ? (totalSys / total).toFixed(0) + ' mmHg' : '0 mmHg';
+            document.getElementById('critical-alert-count').innerText = criticalCount;
+        }
+
+        /**
+         * RENDER SEMUA GRAFIK CHART.JS
+         */
+        function renderCharts() {
+            // Chart 1: Distribusi Risiko Triase (Donut)
+            const riskCounts = { Rendah: 0, Sedang: 0, Tinggi: 0, Kritis: 0 };
+            patients.forEach(p => {
+                const res = calculateEWS(p);
+                riskCounts[res.category]++;
+            });
+
+            if (chartInstances.riskDist) chartInstances.riskDist.destroy();
+            const ctxRisk = document.getElementById('chartRiskDistribution').getContext('2d');
+            chartInstances.riskDist = new Chart(ctxRisk, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Rendah (EWS 0-2)', 'Sedang (EWS 3-4)', 'Tinggi (EWS 5-6)', 'Kritis (EWS ≥ 7)'],
+                    datasets: [{
+                        data: [riskCounts.Rendah, riskCounts.Sedang, riskCounts.Tinggi, riskCounts.Kritis],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#ef4444'],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } } }
+                    },
+                    cutout: '68%'
+                }
+            });
+
+            // Chart 2: Korelasi Sistolik vs GDS (Scatter Plot)
+            const scatterData = patients.map(p => ({
+                x: Number(p.systolic),
+                y: Number(p.glucose),
+                name: p.nama,
+                category: calculateEWS(p).category
+            }));
+
+            if (chartInstances.bivariate) chartInstances.bivariate.destroy();
+            const ctxBivariate = document.getElementById('chartBivariate').getContext('2d');
+            chartInstances.bivariate = new Chart(ctxBivariate, {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Pasien (Sistolik vs GDS)',
+                        data: scatterData,
+                        backgroundColor: (ctx) => {
+                            const raw = ctx.raw;
+                            if (!raw) return '#14b8a6';
+                            if (raw.category === 'Kritis') return '#ef4444';
+                            if (raw.category === 'Tinggi') return '#f97316';
+                            if (raw.category === 'Sedang') return '#f59e0b';
+                            return '#10b981';
+                        },
+                        pointRadius: 6,
+                        pointHoverRadius: 9
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Tekanan Darah Sistolik (mmHg)', font: { size: 11, weight: 'bold' } },
+                            min: 80,
+                            max: 220
+                        },
+                        y: {
+                            title: { display: true, text: 'Gula Darah Sewaktu / GDS (mg/dL)', font: { size: 11, weight: 'bold' } },
+                            min: 40,
+                            max: 350
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const d = context.raw;
+                                    return `${d.name}: Sistolik ${d.x} mmHg, GDS ${d.y} mg/dL (${d.category})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Chart 3: Distribusi ICD-10 Kategori
+            const icdMap = {};
+            patients.forEach(p => {
+                const label = p.icd.split(' ')[0]; // Ambil nama kelompok singkat
+                icdMap[label] = (icdMap[label] || 0) + 1;
+            });
+
+            if (chartInstances.icd) chartInstances.icd.destroy();
+            const ctxICD = document.getElementById('chartICD').getContext('2d');
+            chartInstances.icd = new Chart(ctxICD, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(icdMap),
+                    datasets: [{
+                        label: 'Jumlah Pasien',
+                        data: Object.values(icdMap),
+                        backgroundColor: '#0d9488',
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    scales: {
+                        x: { ticks: { precision: 0 } }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+
+            // Chart 4: Estimasi Tren Beban 7 Hari
+            const days = ['H-6', 'H-5', 'H-4', 'H-3', 'H-2', 'Kemarin', 'Hari Ini'];
+            const trendStabil = [8, 11, 10, 14, 12, 13, patients.filter(p => calculateEWS(p).score < 5).length];
+            const trendKritis = [2, 3, 4, 3, 5, 4, patients.filter(p => calculateEWS(p).score >= 5).length];
+
+            if (chartInstances.trend) chartInstances.trend.destroy();
+            const ctxTrend = document.getElementById('chartTrend').getContext('2d');
+            chartInstances.trend = new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Pasien Stabil (EWS < 5)',
+                            data: trendStabil,
+                            borderColor: '#0d9488',
+                            backgroundColor: 'rgba(13, 148, 136, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Perhatian Tinggi / Kritis (EWS ≥ 5)',
+                            data: trendKritis,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { ticks: { precision: 0 }, beginAtZero: true }
+                    },
+                    plugins: {
+                        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+                    }
+                }
+            });
+        }
+
+        /**
+         * RENDER TABEL QUICK VIEW (PRIORITAS KRITIS)
+         */
+        function renderQuickHighRiskTable() {
+            const tbody = document.getElementById('quick-high-risk-tbody');
+            tbody.innerHTML = '';
+
+            const highRisk = patients
+                .map(p => ({ ...p, ews: calculateEWS(p) }))
+                .filter(p => p.ews.score >= 5)
+                .sort((a, b) => b.ews.score - a.ews.score);
+
+            if (highRisk.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center p-4 text-slate-400">Tidak ada pasien dengan risiko tinggi/kritis saat ini. Seluruh pasien dalam rentang stabil.</td></tr>`;
+                return;
+            }
+
+            highRisk.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+                tr.innerHTML = `
+                    <td class="p-3 font-mono font-medium text-slate-700">${p.rm}</td>
+                    <td class="p-3 font-semibold text-slate-900">${p.nama}</td>
+                    <td class="p-3 text-slate-600">${p.usia} th / ${p.gender}</td>
+                    <td class="p-3 font-mono text-slate-700">${p.systolic}/${p.diastolic} | ${p.hr}bpm | ${p.spo2}% | ${p.glucose}mg/dL</td>
+                    <td class="p-3 text-center">
+                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${p.ews.labelClass}">
+                            Skor ${p.ews.score}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-700 max-w-xs truncate" title="${p.diagnosis}">${p.diagnosis}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="viewPatientDetail('${p.id}')" class="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded text-[11px] transition">
+                            <i class="fa-solid fa-eye"></i> Detail
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        /**
+         * RENDER FULL PATIENT TABLE DENGAN SEARCH & FILTER
+         */
+        function renderFullPatientTable() {
+            const tbody = document.getElementById('full-patient-tbody');
+            tbody.innerHTML = '';
+
+            const searchVal = (document.getElementById('patient-search-input')?.value || '').toLowerCase();
+            const riskFilter = document.getElementById('filter-risk')?.value || 'ALL';
+            const genderFilter = document.getElementById('filter-gender')?.value || 'ALL';
+
+            const filtered = patients.filter(p => {
+                const ews = calculateEWS(p);
+                const matchesSearch = p.nama.toLowerCase().includes(searchVal) || 
+                                      p.rm.toLowerCase().includes(searchVal) || 
+                                      p.diagnosis.toLowerCase().includes(searchVal);
+                const matchesRisk = (riskFilter === 'ALL') || (ews.category === riskFilter);
+                const matchesGender = (genderFilter === 'ALL') || (p.gender === genderFilter);
+
+                return matchesSearch && matchesRisk && matchesGender;
+            });
+
+            document.getElementById('patient-count-info').innerText = `Menampilkan ${filtered.length} dari total ${patients.length} rekam pasien`;
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="11" class="text-center p-6 text-slate-400">Tidak ada rekam data pasien yang cocok dengan kriteria pencarian/filter.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const ews = calculateEWS(p);
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100";
+
+                // Deteksi flag anomali inline
+                const isHypox = p.spo2 < 92 ? 'text-rose-600 font-bold' : 'text-slate-700';
+                const isHtn = p.systolic >= 160 ? 'text-rose-600 font-bold' : 'text-slate-700';
+
+                tr.innerHTML = `
+                    <td class="p-3.5 font-mono font-medium text-slate-600">${p.rm}</td>
+                    <td class="p-3.5 font-semibold text-slate-900">${p.nama}</td>
+                    <td class="p-3.5 text-center text-slate-600">${p.usia} / ${p.gender}</td>
+                    <td class="p-3.5 font-mono ${isHtn}">${p.systolic}/${p.diastolic}</td>
+                    <td class="p-3.5 text-center font-mono text-slate-700">${p.hr}</td>
+                    <td class="p-3.5 text-center font-mono ${isHypox}">${p.spo2}%</td>
+                    <td class="p-3.5 text-center font-mono text-slate-700">${p.glucose}</td>
+                    <td class="p-3.5 text-center">
+                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-bold ${ews.labelClass}">
+                            ${ews.score}
+                        </span>
+                    </td>
+                    <td class="p-3.5">
+                        <span class="inline-flex items-center gap-1 text-[11px] font-bold text-${ews.color}-700">
+                            <span class="w-1.5 h-1.5 rounded-full bg-${ews.color}-500"></span>
+                            ${ews.category}
+                        </span>
+                    </td>
+                    <td class="p-3 text-slate-600 max-w-[150px] truncate" title="${p.icd}">${p.icd}</td>
+                    <td class="p-3.5 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center gap-1.5">
+                            <button onclick="viewPatientDetail('${p.id}')" title="Lihat Rekam Lengkap" class="p-1.5 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 transition">
+                                <i class="fa-solid fa-file-waveform"></i>
+                            </button>
+                            <button onclick="editPatient('${p.id}')" title="Edit Data" class="p-1.5 rounded bg-teal-50 hover:bg-teal-100 text-teal-700 transition">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button onclick="deletePatient('${p.id}')" title="Hapus Data" class="p-1.5 rounded bg-rose-50 hover:bg-rose-100 text-rose-600 transition">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function applyFilterAndSearch() {
+            renderFullPatientTable();
+        }
+
+        /**
+         * RENDER BAGIAN STATISTIK & DETEKSI ANOMALI
+         */
+        function renderAnalyticsSection() {
+            const tbody = document.getElementById('vital-stats-tbody');
+            tbody.innerHTML = '';
+
+            const sysArr = patients.map(p => Number(p.systolic));
+            const diaArr = patients.map(p => Number(p.diastolic));
+            const hrArr = patients.map(p => Number(p.hr));
+            const spo2Arr = patients.map(p => Number(p.spo2));
+            const gluArr = patients.map(p => Number(p.glucose));
+
+            const statsList = [
+                { name: 'Tekanan Darah Sistolik', unit: 'mmHg', norm: '100 - 120 mmHg', data: calculateDescriptiveStats(sysArr) },
+                { name: 'Tekanan Darah Diastolik', unit: 'mmHg', norm: '60 - 80 mmHg', data: calculateDescriptiveStats(diaArr) },
+                { name: 'Laju Denyut Jantung (HR)', unit: 'bpm (denyut/mnt)', norm: '60 - 100 bpm', data: calculateDescriptiveStats(hrArr) },
+                { name: 'Saturasi Oksigen Perifer (SpO2)', unit: '%', norm: '95 - 100 %', data: calculateDescriptiveStats(spo2Arr) },
+                { name: 'Gula Darah Sewaktu (GDS)', unit: 'mg/dL', norm: '70 - 140 mg/dL', data: calculateDescriptiveStats(gluArr) }
+            ];
+
+            statsList.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-200";
+                tr.innerHTML = `
+                    <td class="p-3 font-semibold text-slate-800">${item.name}</td>
+                    <td class="p-3 font-mono text-slate-500">${item.unit}</td>
+                    <td class="p-3 text-center font-mono font-medium">${item.data.min}</td>
+                    <td class="p-3 text-center font-mono font-medium">${item.data.max}</td>
+                    <td class="p-3 text-center font-mono font-bold text-teal-700 bg-teal-50/50">${item.data.mean}</td>
+                    <td class="p-3 text-center font-mono font-medium">${item.data.median}</td>
+                    <td class="p-3 text-center font-mono text-slate-600">&plusmn; ${item.data.stdDev}</td>
+                    <td class="p-3 text-xs text-slate-500">${item.norm}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            // 1. Anomali Krisis Hipertensi (Sistolik >= 180 atau Diastolik >= 120)
+            const htnList = document.getElementById('anomaly-htn-list');
+            htnList.innerHTML = '';
+            const htnPatients = patients.filter(p => p.systolic >= 180 || p.diastolic >= 120);
+            if (htnPatients.length === 0) {
+                htnList.innerHTML = '<p class="text-slate-400 italic">Nihil. Tidak ada krisis hipertensi aktif.</p>';
+            } else {
+                htnPatients.forEach(p => {
+                    htnList.innerHTML += `
+                        <div class="p-2 rounded bg-rose-50 border border-rose-100 flex items-center justify-between">
+                            <div>
+                                <span class="font-bold text-rose-900">${p.nama}</span>
+                                <span class="block text-[10px] text-rose-700 font-mono">${p.rm} • TD: ${p.systolic}/${p.diastolic} mmHg</span>
+                            </div>
+                            <button onclick="viewPatientDetail('${p.id}')" class="px-2 py-0.5 bg-rose-200 text-rose-800 rounded font-bold text-[10px]">Tindak</button>
+                        </div>
+                    `;
+                });
+            }
+
+            // 2. Anomali Hipoksemia (SpO2 < 92%)
+            const spo2List = document.getElementById('anomaly-spo2-list');
+            spo2List.innerHTML = '';
+            const spo2Patients = patients.filter(p => p.spo2 < 92);
+            if (spo2Patients.length === 0) {
+                spo2List.innerHTML = '<p class="text-slate-400 italic">Nihil. Oksigenasi seluruh pasien memadai.</p>';
+            } else {
+                spo2Patients.forEach(p => {
+                    spo2List.innerHTML += `
+                        <div class="p-2 rounded bg-amber-50 border border-amber-100 flex items-center justify-between">
+                            <div>
+                                <span class="font-bold text-amber-900">${p.nama}</span>
+                                <span class="block text-[10px] text-amber-700 font-mono">${p.rm} • SpO2: ${p.spo2}% (Hipoksia)</span>
+                            </div>
+                            <button onclick="viewPatientDetail('${p.id}')" class="px-2 py-0.5 bg-amber-200 text-amber-800 rounded font-bold text-[10px]">Tindak</button>
+                        </div>
+                    `;
+                });
+            }
+
+            // 3. Anomali Glikemik Ekstrem (GDS > 250 atau < 70)
+            const glucList = document.getElementById('anomaly-glucose-list');
+            glucList.innerHTML = '';
+            const glucPatients = patients.filter(p => p.glucose > 250 || p.glucose < 70);
+            if (glucPatients.length === 0) {
+                glucList.innerHTML = '<p class="text-slate-400 italic">Nihil. Glukosa darah dalam batas toleransi.</p>';
+            } else {
+                glucPatients.forEach(p => {
+                    const isHypo = p.glucose < 70;
+                    glucList.innerHTML += `
+                        <div class="p-2 rounded bg-indigo-50 border border-indigo-100 flex items-center justify-between">
+                            <div>
+                                <span class="font-bold text-indigo-900">${p.nama}</span>
+                                <span class="block text-[10px] text-indigo-700 font-mono">${p.rm} • ${isHypo ? 'HIPOGLIKEMIA' : 'HIPERGLIKEMIA'}: ${p.glucose} mg/dL</span>
+                            </div>
+                            <button onclick="viewPatientDetail('${p.id}')" class="px-2 py-0.5 bg-indigo-200 text-indigo-800 rounded font-bold text-[10px]">Tindak</button>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        /**
+         * RENDER BAGIAN LAPORAN & EKSPOR
+         */
+        function renderReportsSection() {
+            document.getElementById('rep-total-pts').innerText = patients.length + ' Pasien';
+            document.getElementById('rep-critical-pts').innerText = patients.filter(p => calculateEWS(p).category === 'Kritis').length + ' Pasien';
+            document.getElementById('rep-glucose-cases').innerText = patients.filter(p => p.glucose > 200 || p.glucose < 70).length + ' Kasus';
+            document.getElementById('rep-hypoxia-cases').innerText = patients.filter(p => p.spo2 < 93).length + ' Kasus';
+
+            // Generate preview CSV
+            let preview = "ID_RM,Nama_Pasien,Usia,Gender,Sistolik,Diastolik,HR,SpO2,GDS,Skor_EWS,Triase,Diagnosis\n";
+            patients.slice(0, 5).forEach(p => {
+                const ews = calculateEWS(p);
+                preview += `${p.rm},"${p.nama}",${p.usia},${p.gender},${p.systolic},${p.diastolic},${p.hr},${p.spo2},${p.glucose},${ews.score},${ews.category},"${p.diagnosis}"\n`;
+            });
+            preview += "... [Dan rekaman pasien lainnya]";
+            document.getElementById('csv-preview-box').innerText = preview;
+        }
+
+        /**
+         * NOTIFIKASI DROPDOWN ALERT
+         */
+        function toggleAlertMenu() {
+            const dropdown = document.getElementById('alert-dropdown');
+            dropdown.classList.toggle('hidden');
+        }
+
+        function updateCriticalAlertDropdown() {
+            const list = document.getElementById('critical-alert-list');
+            list.innerHTML = '';
+            const crit = patients.filter(p => calculateEWS(p).score >= 7);
+
+            if (crit.length === 0) {
+                list.innerHTML = `<p class="text-slate-400 p-2 text-center text-[11px]">Tidak ada alert kritis aktif.</p>`;
+                return;
+            }
+
+            crit.forEach(p => {
+                const ews = calculateEWS(p);
+                list.innerHTML += `
+                    <div onclick="viewPatientDetail('${p.id}'); toggleAlertMenu();" class="p-2 bg-rose-50 hover:bg-rose-100 rounded-lg cursor-pointer border border-rose-100 transition">
+                        <div class="flex items-center justify-between">
+                            <span class="font-bold text-rose-900">${p.nama}</span>
+                            <span class="font-mono text-[10px] bg-rose-600 text-white px-1.5 py-0.2 rounded font-bold">EWS ${ews.score}</span>
+                        </div>
+                        <p class="text-[10px] text-rose-700 truncate">${p.diagnosis}</p>
+                    </div>
+                `;
+            });
+        }
+
+        /**
+         * MODAL TAMBAH & EDIT PASIEN
+         */
+        function openPatientModal(editId = null) {
+            document.getElementById('patient-modal').classList.remove('hidden');
+            const form = document.getElementById('patient-form');
+            form.reset();
+
+            if (editId) {
+                const p = patients.find(item => item.id === editId);
+                if (p) {
+                    document.getElementById('modal-form-title').innerText = "Edit Data Rekam Medis: " + p.rm;
+                    document.getElementById('form-patient-id').value = p.id;
+                    document.getElementById('form-rm').value = p.rm;
+                    document.getElementById('form-nama').value = p.nama;
+                    document.getElementById('form-usia').value = p.usia;
+                    document.getElementById('form-gender').value = p.gender;
+                    document.getElementById('form-icd').value = p.icd;
+                    document.getElementById('form-systolic').value = p.systolic;
+                    document.getElementById('form-diastolic').value = p.diastolic;
+                    document.getElementById('form-hr').value = p.hr;
+                    document.getElementById('form-spo2').value = p.spo2;
+                    document.getElementById('form-glucose').value = p.glucose;
+                    document.getElementById('form-diagnosis').value = p.diagnosis;
+                }
+            } else {
+                document.getElementById('modal-form-title').innerText = "Input Data Klinis Pasien Baru";
+                document.getElementById('form-patient-id').value = '';
+                // Generate default RM
+                const nextNum = patients.length + 1;
+                document.getElementById('form-rm').value = `RM-2026-${String(nextNum).padStart(3, '0')}`;
+            }
+        }
+
+        function closePatientModal() {
+            document.getElementById('patient-modal').classList.add('hidden');
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const editId = document.getElementById('form-patient-id').value;
+            const patientData = {
+                id: editId || 'P-' + Date.now().toString().slice(-4),
+                rm: document.getElementById('form-rm').value.trim(),
+                nama: document.getElementById('form-nama').value.trim(),
+                usia: Number(document.getElementById('form-usia').value),
+                gender: document.getElementById('form-gender').value,
+                icd: document.getElementById('form-icd').value,
+                systolic: Number(document.getElementById('form-systolic').value),
+                diastolic: Number(document.getElementById('form-diastolic').value),
+                hr: Number(document.getElementById('form-hr').value),
+                spo2: Number(document.getElementById('form-spo2').value),
+                glucose: Number(document.getElementById('form-glucose').value),
+                diagnosis: document.getElementById('form-diagnosis').value.trim()
+            };
+
+            if (editId) {
+                const index = patients.findIndex(p => p.id === editId);
+                if (index !== -1) patients[index] = patientData;
+                showToast("Data Pasien Diperbarui", `Rekam medis ${patientData.rm} berhasil disimpan.`);
+            } else {
+                patients.unshift(patientData);
+                showToast("Pasien Baru Ditambahkan", `Pasien ${patientData.nama} berhasil didaftarkan ke sistem.`);
+            }
+
+            closePatientModal();
+            saveState();
+        }
+
+        function editPatient(id) {
+            openPatientModal(id);
+        }
+
+        function deletePatient(id) {
+            const p = patients.find(item => item.id === id);
+            if (!p) return;
+            // Gunakan custom modal konfirmasi atau langsung hapus dengan toast undo
+            patients = patients.filter(item => item.id !== id);
+            saveState();
+            showToast("Pasien Dihapus", `Rekam pasien ${p.nama} (${p.rm}) telah dihapus dari sistem.`);
+        }
+
+        /**
+         * MODAL DETAIL DOSSIER PASIEN & REKOMENDASI KLINIS
+         */
+        function viewPatientDetail(id) {
+            const p = patients.find(item => item.id === id);
+            if (!p) return;
+
+            const ews = calculateEWS(p);
+
+            document.getElementById('dt-name').innerText = p.nama;
+            document.getElementById('dt-rm').innerText = "NO. RM: " + p.rm;
+            document.getElementById('dt-age-gender').innerText = `${p.usia} Tahun / ${p.gender === 'L' ? 'Laki-laki' : 'Perempuan'}`;
+            document.getElementById('dt-icd').innerText = p.icd;
+            document.getElementById('dt-diagnosis').innerText = p.diagnosis;
+
+            document.getElementById('dt-bp').innerText = `${p.systolic}/${p.diastolic}`;
+            document.getElementById('dt-hr').innerText = p.hr;
+            document.getElementById('dt-spo2').innerText = p.spo2 + '%';
+            document.getElementById('dt-glucose').innerText = p.glucose;
+
+            document.getElementById('dt-risk-text').innerText = `KATEGORI TRIASE: ${ews.category.toUpperCase()}`;
+            document.getElementById('dt-ews-score').innerText = `National Early Warning Score (NEWS2 Modifikasi): ${ews.score} Poin`;
+
+            // Style banner
+            const banner = document.getElementById('dt-risk-banner');
+            if (ews.category === 'Kritis') {
+                banner.className = "p-4 rounded-xl flex items-center justify-between bg-rose-50 text-rose-800 border border-rose-200";
+            } else if (ews.category === 'Tinggi') {
+                banner.className = "p-4 rounded-xl flex items-center justify-between bg-orange-50 text-orange-800 border border-orange-200";
+            } else if (ews.category === 'Sedang') {
+                banner.className = "p-4 rounded-xl flex items-center justify-between bg-amber-50 text-amber-800 border border-amber-200";
+            } else {
+                banner.className = "p-4 rounded-xl flex items-center justify-between bg-emerald-50 text-emerald-800 border border-emerald-200";
+            }
+
+            // Generate Rekomendasi Klinis Otomatis
+            const recContainer = document.getElementById('dt-recommendations');
+            recContainer.innerHTML = '';
+            const recs = [];
+
+            if (ews.score >= 7) {
+                recs.push("🚨 <strong>Tindakan Resusitasi Segera:</strong> Hubungi tim Medis Emergency / ICU. Pantau tanda vital secara kontinu setiap 15-30 menit.");
+            } else if (ews.score >= 5) {
+                recs.push("⚠️ <strong>Eskalasi Perawatan:</strong> Konsultasikan segera dengan Dokter Penanggung Jawab Pasien (DPJP). Pertimbangkan transfer ke unit intermediate care.");
+            } else {
+                recs.push("✅ <strong>Kondisi Fisiologis Terkontrol:</strong> Observasi berkala tanda vital tiap 4-6 jam.");
+            }
+
+            if (p.spo2 < 92) {
+                recs.push(`🫁 <strong>Hipoksemia Akut (${p.spo2}%):</strong> Berikan terapi oksigen aliran tinggi (Nasal kanul 3-4 lpm atau NRM), posisikan semi-fowler.`);
+            }
+            if (p.systolic >= 180) {
+                recs.push(`❤️ <strong>Krisis Hipertensi Sistolik (${p.systolic} mmHg):</strong> Evaluasi kerusakan target organ (jantung, otak, ginjal). Siapkan antihipertensi parenteral.`);
+            }
+            if (p.glucose > 250) {
+                recs.push(`🩸 <strong>Hiperglikemia Ekstrem (${p.glucose} mg/dL):</strong> Skrining status ketoasidosis diabetik (KAD) / HHS, siapkan regulasi insulin cepat.`);
+            } else if (p.glucose < 70) {
+                recs.push(`🍬 <strong>Hipoglikemia Klinis (${p.glucose} mg/dL):</strong> Berikan dekstrosa oral/IV segera (Rule of 15).`);
+            }
+
+            recs.forEach(r => {
+                const pEl = document.createElement('p');
+                pEl.className = "flex items-start gap-2 py-0.5";
+                pEl.innerHTML = `<span>&bull;</span><span>${r}</span>`;
+                recContainer.appendChild(pEl);
+            });
+
+            document.getElementById('detail-modal').classList.remove('hidden');
+        }
+
+        function closeDetailModal() {
+            document.getElementById('detail-modal').classList.add('hidden');
+        }
+
+        /**
+         * FITUR GENERATOR DATA COHORT UJI (SAMPLE DATA GENERATOR)
+         */
+        function generateRandomCohort(count = 5) {
+            const firstNames = ["Budi", "Dewi", "Agus", "Rini", "Hadi", "Titi", "Yusuf", "Lestari", "Eko", "Fitri"];
+            const lastNames = ["Kusuma", "Pratama", "Saputra", "Wulandari", "Wijaya", "Siregar", "Setiawan", "Lubis"];
+            const icds = [
+                "Kardiovaskular (I00-I99)",
+                "Respiratori (J00-J99)",
+                "Endokrin & Metabolik (E00-E90)",
+                "Penyakit Menular / Infeksi (A00-B99)",
+                "Gastrointestinal (K00-K93)"
+            ];
+            const diagnoses = [
+                "Hipertensi Grade I",
+                "Bronkitis Akut",
+                "Gastroenteritis Dehidrasi Ringan",
+                "Sindrom Koroner Tanpa ST Elevasi",
+                "Asma Bronkial Terkontrol",
+                "Diabetes Melitus Terkompensasi"
+            ];
+
+            for (let i = 0; i < count; i++) {
+                const fname = firstNames[Math.floor(Math.random() * firstNames.length)];
+                const lname = lastNames[Math.floor(Math.random() * lastNames.length)];
+                const gender = Math.random() > 0.5 ? 'L' : 'P';
+                const prefix = gender === 'L' ? (Math.random() > 0.4 ? 'Bpk. ' : 'Sdr. ') : (Math.random() > 0.4 ? 'Ibu ' : 'Nn. ');
+                const num = patients.length + 1;
+
+                patients.unshift({
+                    id: 'P-' + Date.now().toString().slice(-4) + '-' + i,
+                    rm: `RM-2026-${String(num).padStart(3, '0')}`,
+                    nama: prefix + fname + ' ' + lname,
+                    usia: Math.floor(Math.random() * 55) + 20,
+                    gender: gender,
+                    systolic: Math.floor(Math.random() * 80) + 100, // 100-180
+                    diastolic: Math.floor(Math.random() * 45) + 65, // 65-110
+                    hr: Math.floor(Math.random() * 65) + 60, // 60-125
+                    spo2: Math.floor(Math.random() * 12) + 89, // 89-100
+                    glucose: Math.floor(Math.random() * 220) + 75, // 75-295
+                    icd: icds[Math.floor(Math.random() * icds.length)],
+                    diagnosis: diagnoses[Math.floor(Math.random() * diagnoses.length)]
+                });
+            }
+
+            saveState();
+            showToast("Cohort Baru Dibuat", `Berhasil men-generate ${count} rekam pasien klinis baru secara acak.`);
+        }
+
+        function resetToInitialData() {
+            patients = JSON.parse(JSON.stringify(INITIAL_PATIENTS));
+            saveState();
+            showToast("Database Direset", "Data telah dikembalikan ke dataset standar awal.");
+        }
+
+        /**
+         * EKSPOR DATA KE CSV
+         */
+        function exportToCSV() {
+            let csv = "ID_Pasien,No_RM,Nama_Pasien,Usia,Jenis_Kelamin,Sistolik_mmHg,Diastolik_mmHg,HR_bpm,SpO2_persen,GDS_mgdL,Skor_EWS,Kategori_Triase,Kategori_ICD10,Diagnosis\n";
+
+            patients.forEach(p => {
+                const ews = calculateEWS(p);
+                const safeName = p.nama.replace(/"/g, '""');
+                const safeDiag = p.diagnosis.replace(/"/g, '""');
+                csv += `${p.id},${p.rm},"${safeName}",${p.usia},${p.gender},${p.systolic},${p.diastolic},${p.hr},${p.spo2},${p.glucose},${ews.score},${ews.category},"${p.icd}","${safeDiag}"\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Laporan_Informatika_Kesehatan_${new Date().toISOString().slice(0,10)}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast("Ekspor Berhasil", "Berkas CSV rekam klinis telah diunduh.");
+        }
+
+        /**
+         * SALIN DATA KE CLIPBOARD
+         */
+        function copyDataToClipboard() {
+            const summary = {
+                waktu_ekspor: new Date().toISOString(),
+                total_pasien: patients.length,
+                pasien_kritis: patients.filter(p => calculateEWS(p).category === 'Kritis').length,
+                data: patients.map(p => ({
+                    rm: p.rm,
+                    nama: p.nama,
+                    vitals: `${p.systolic}/${p.diastolic} mmHg, ${p.spo2}%, ${p.glucose} mg/dL`,
+                    ews: calculateEWS(p).score
+                }))
+            };
+
+            const text = JSON.stringify(summary, null, 2);
+
+            // Copy aman via textarea untuk mengatasi pembatasan iFrame
+            const tempTextArea = document.createElement('textarea');
+            tempTextArea.value = text;
+            document.body.appendChild(tempTextArea);
+            tempTextArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempTextArea);
+
+            showToast("Disalin ke Clipboard", "Ringkasan JSON data klinis siap ditempel.");
+        }
+
+        /**
+         * TOAST NOTIFICATION COMPONENT (NO ALERT)
+         */
+        let toastTimeout;
+        function showToast(title, message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2');
+            }, 10);
+
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.add('translate-y-2');
+                setTimeout(() => toast.classList.add('hidden'), 300);
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
